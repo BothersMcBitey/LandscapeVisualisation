@@ -10,7 +10,10 @@ public class MeshController : MonoBehaviour
     public int s;
     public int n;
 
-    [Range(10, 26000)]
+    public float m;
+    public float h;
+
+    [Range(10, 500)]
     public int resolution;
     [Header("Y values actually correspond to Z axis")]
     public Vector3 origin;
@@ -34,7 +37,7 @@ public class MeshController : MonoBehaviour
         UpdateHeight();
         UpdateColor();
     }
-    
+
     void UpdateHeight()
     {
         Vector3[] newVs = mesh.vertices;
@@ -42,13 +45,13 @@ public class MeshController : MonoBehaviour
         {
             float x = newVs[i].x;
             float z = newVs[i].z;
-            float y = 0f;       
+            float y = 0f;
             newVs[i] = new Vector3(x, y, z);
         }
 
         Tuple<int, Vector3>[] ivs = new Tuple<int, Vector3>[newVs.Length];
 
-        for(int i = 0; i < newVs.Length; i++)
+        for (int i = 0; i < newVs.Length; i++)
         {
             ivs[i] = new Tuple<int, Vector3>(i, newVs[i]);
         }
@@ -71,18 +74,42 @@ public class MeshController : MonoBehaviour
             vertex = new Vector3(vertex.x, ((lim - theta) / lim) * size.y, vertex.z);
 
             newVs[np.Item1] = vertex;
+
+            //Calculate width
+            {
+                Vector3 e = p + (p.normalized * DeltaNormal());
+                np = ivs.OrderBy(v => (v.Item2 - e).sqrMagnitude).First();
+
+                vertex = np.Item2;
+
+                vertex = new Vector3(vertex.x, ((lim - theta) / lim) * size.y / h, vertex.z);
+
+                newVs[np.Item1] = vertex;
+
+                e = p - (p.normalized * DeltaNormal());
+                np = ivs.OrderBy(v => (v.Item2 - e).sqrMagnitude).First();
+
+                vertex = np.Item2;
+
+                vertex = new Vector3(vertex.x, ((lim - theta) / lim) * size.y / h, vertex.z);
+
+                newVs[np.Item1] = vertex;
+            }
         }
 
-        
+
 
         mesh.vertices = newVs;
     }
 
-    float GetY(float x, float z)
+    float DeltaNormal()
     {
+        return m;
+    }
 
-
-        return 0f;
+    float DeltaH()
+    {
+        return h;
     }
 
     void UpdateColor()
@@ -102,10 +129,10 @@ public class MeshController : MonoBehaviour
         {
 
             float y = mesh.vertices[i].y;
-            y = (y - min) * (1 / (max-min));
+            y = (y - min) * (1 / (max - min));
 
             float h = y * 0.5f;
-            h = h - (1f/6f);
+            h = h - (1f / 6f);
             if (h < 0) h = 1f + h;
 
             colors[i] = Color.HSVToRGB(h, 1f, 1f);
